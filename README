@@ -1,9 +1,5 @@
-Project ideas :
-- Strava clone using Django
-- Coffee Tracker with Telegram bot input
 - Workout / Training Split Generator + Tracker
   Log workouts by type (gym, run, bike, apnea)
   Visualize weekly volume and fatigue
   Generate split plans (4-day run, 3-day lift, etc.)
   Rate RPE, soreness, sleep quality
-- Custom breathwork
