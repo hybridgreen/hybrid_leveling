@@ -1,16 +1,25 @@
 from typing import Union
-#from fastapi import FastAPI
+from fastapi import FastAPI
 from pydantic import BaseModel
+from nicegui import ui
 
 import sys, os, json
 from nanoid import generate
 from datetime import date
 
-from Users import User
+from Users import *
 from Activities import *
 import database
 
-# app = FastAPI()
+app = FastAPI()
+main_page = ui.column()
+result = None
+
+def on_submit (id, username):
+    create_user(id,username)
+    ui.notify("User created!")
+    #save()
+    main_page.clear()
 
 def save():
     log_dir = os.path.abspath(os.getcwd())+"/log"
@@ -34,22 +43,34 @@ def load():
     pass
 
 def create_new_user():
-    username = input("Please enter user name:")
-    id = "U"+generate("123456789", size=3)
-    print(f"Welcome, your id is {id}, please save it")
-    database.user_base[id] = Users.create_user(id, username)
+    main_page.clear()
+    with ui.card():
+        id = "U"+generate("123456789", size=3)
+        ui.label(f"Welcome, your id is {id}, please save it")
+        username = ui.input(label="Enter user name").props('clearable')
+        ui.button('Submit', on_click = lambda : on_submit(id,username.value))
+    return
 
-    return database.user_base[id]
+def add_workout():
 
-def fetch_user():
-    id = ''
-    while(id == ''):
-        id = input("Enter your user id:")
-        if id in database.user_base:
-            user = database.user_base[id]
-            print(f"Welcome {user.name}")
-            return user
-        id = ''
+    activity_type = input("Activity type:")
+    activity_dur = input("Activity length:")
+    activity_rpe = input("(Optional)Enter effort:")
+
+    if(activity_rpe == ''):
+        activity_rpe = 0
+    activity_day = input("(Optional)Enter activity date in ISO format:")
+    if(activity_day == ''):
+        activity_day = date.today()
+    else:
+        try:
+            activity_day = date.fromisoformat(activity_day)
+        except Exception as e:
+            print(e)
+    item =  create_activity(activity_type, activity_dur, activity_rpe, activity_day)
+    user.activities[item.id]= item
+    #save()
+
 
 def display_activities(user: User):
     for id in user.activities:
@@ -61,64 +82,23 @@ def display_activities(user: User):
         print("===================================")
     pass
 
+def dashboard():
+    with main_page:
+        ui.button(label = 'Add Workout', on_click = lambda: add_workout())
+        ui.button(label = 'View Activities', on_click = lambda: display_activities() )
+    pass
+
 def main():
     
     print("Starting App")
     load()
-    new_user = ''
-    while(new_user == ''):
-        new_user = input("Are you a new user? (y/n)").lower().strip()
-        if new_user == 'y':
-            user = create_new_user()
-        elif new_user =='n':
-            user = fetch_user()
-        else:
-            new_user= ''
-            print("Error only y/n allowed. Try again")
 
-    while(1):
+    with main_page:
+        ui.label("Are you a new user?")
+        ui.button('YES', on_click = create_new_user)
+        ui.button('NO', on_click = fetch_user)
 
-        cmd = input("Enter command:").lower().strip()
-
-        match cmd:
-            case "add workout":
-
-                activity_type = input("Activity type:")
-                
-                activity_dur = input("Activity length:")
-
-                activity_rpe = input("(Optional)Enter effort:")
-                if(activity_rpe == ''):
-                    activity_rpe = 0
-
-
-                activity_day = input("(Optional)Enter activity date in ISO format:")
-                if(activity_day == ''):
-                        activity_day = date.today()
-                else:
-                    try:
-                        activity_day = date.fromisoformat(activity_day)
-                    except Exception as e:
-                        print(e)
- 
-                item =  create_activity(activity_type, activity_dur, activity_rpe, activity_day)
-
-                user.activities[item.id]= item
-                save()
-
-            case "display":
-                display_activities(user)
-
-            case "delete activity":
-                del user.activities[input("Enter activity ID")]
-            case "exit":
-                print("Exiting...")
-                save()
-                sys.exit(0)
-            case _:
-                print("Unknown command")
-
-    pass
+    ui.run()
 
 
 main()
