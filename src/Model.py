@@ -33,33 +33,23 @@ def create_user(id: str , name : str):
         name = name,
         activities= dict()
         )
-    AppContext.users[id] = user_obj
+    context.users[id] = user_obj
     return user_obj
-
-def fetch_user():
-    id = ''
-    while(id == ''):
-        id = input("Enter your user id:")
-        if id in context.users:
-            user = context.users[id]
-            print(f"Welcome {user.name}")
-            
-        ui.notify("User ID not recognised")
-        id = ''
 
 # -------------------#
 #  Activity handling #
 # -------------------#
 
 def create_activity(type: str, duration: int, rpe: int, timestamp: date):
+    activity_id = generate(size = 10)
     activity = Activity (
-        id = generate(size = 10),
+        id = activity_id,
         timestamp = timestamp,
         type = type,
         duration = duration,
         rpe = rpe
         )
-    current_user.activities[id] = activity
+    context.current_user.activities[activity_id] = activity
 
 def display_activity(id):
     pass
@@ -81,10 +71,11 @@ def save():
         user = context.users[id]
         path = os.path.join(log_dir,user.id)
 
-        with open(path,'+') as file:
+        with open(path,'w') as file:
             user_json = user.model_dump_json()
             file.write(user_json)
         pass
+    print("Saved!")
 
 def load():
     print("Loading user data")
