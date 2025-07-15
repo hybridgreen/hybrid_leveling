@@ -51,11 +51,15 @@ def create_activity(type: str, duration: int, rpe: int, timestamp: date):
         )
     context.current_user.activities[activity_id] = activity
 
-def display_activity(id):
-    pass
-
-def update_activity(id):
-    pass
+def edit_activity(type: str, duration: int, rpe: int, timestamp: date, id):
+    activity = Activity (
+        id = id,
+        timestamp = timestamp,
+        type = type,
+        duration = duration,
+        rpe = rpe
+        )
+    context.current_user.activities[id] = activity
 
 def delete_activity(id):
     pass

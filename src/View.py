@@ -12,28 +12,45 @@ import datetime
 #  Event Handler     #
 # -------------------#
 def on_submit (caller, *args):
+    ui.notify(caller)
     match caller:
         case 'create user':
             context.current_user = create_user(args[0], args[1]) #ID and Username
             ui.notify("User created!")
             save()
         case 'add activity':
-            create_activity(args[0],args[1], args[2], args[3])
+            if args[1] is not None and args[2] is not None:
+                duration = args[1] * 60 +  args[2]
+                create_activity(args[0],duration, args[3], args[4])
+            else:
+                ui.notify('Invalid duration')
+            
             ui.notify('Activity created!')
             save()
             pass
         case 'fetch user':
             context.current_user = context.users[args[0]]
             ui.notify(f"Welcome {context.current_user.name}")
+        case 'edit activity':
+            if args[1] is not None and args[2] is not None:
+                duration = args[1] * 60 +  args[2]
+                edit_activity(args[0],duration, args[3], args[4], args[5])
+            else:
+                ui.notify('Invalid duration')
+            save()
         case _:
             pass
     dashboard()
 
 def dispatch(caller):
+    ui.notify(caller)
     match caller:
         case 'back':
+            
             previous_page = nav_history.pop()
             previous_page()
+        case _:
+            pass
 
 
 # -------------------#
@@ -64,7 +81,6 @@ def page_fetch_user():
         ui.button('Submit', on_click = lambda : on_submit('fetch user',id.value))
     context.user_logged_in = True
 
-
 def page_add_workout():
     nav_history.push(page_add_workout)
     context.main_page.clear()
@@ -84,32 +100,66 @@ def page_add_workout():
         with ui.row():
             ui.label('Activity Duration:')
         with ui.row():
-            hours = ui.input(label ='Hours',value = 00, validation = {'Only numbers allowed': lambda value: value.isdecimal()})
-            minutes = ui.input(label = 'Minutes',value = 00, validation = {'Only numbers allowed': lambda value: value.isdecimal()})
-            duration = hours.value * 60 + minutes.value
+            hours = ui.number(label ='Hours', value = 0, min = 0)
+            minutes = ui.number(label = 'Minutes', value = 0, min = 0, step = 10)
         with ui.row().style('width: 100%'):
             rpe = ui.slider(min = 1, max = 10, value = 2)
             ui.label().bind_text_from(rpe, 'value')
         with ui.row():
-            ui.button('Submit', on_click = lambda : [on_submit('add activity',type.value ,duration, rpe.value,  timestamp)])
+            ui.button('Submit', on_click = lambda : [on_submit('add activity',type.value ,hours.value, minutes.value, rpe.value,  timestamp)])
     
-
 def page_activities():
     nav_history.push(page_activities)
-    print("Displaying activities")
-    print(context.current_user.activities)
-    for act_id in context.current_user.activities:
-        activity = context.current_user.activities[act_id]
-        with ui.card() as activity_card:
-            with ui.row():
-                ui.label(f'Activity Type:{activity.type}')
-                ui.label(f'Date:{activity.timestamp}')
-            with ui.row():
-                ui.label(f'Activity Duration: {activity.duration}')
-            with ui.row():
-                ui.label(f'Perceived Effort: {activity.rpe}')
-    pass
- 
+    context.main_page.clear()
+    with context.main_page :
+        for act_id in context.current_user.activities:
+            activity = context.current_user.activities[act_id]
+            with ui.card():
+                with ui.row():
+                    ui.label(f'Activity Type: {activity.type}')
+                    ui.label(f'Date: {activity.timestamp}')
+                    ui.button(icon = "edit", on_click = lambda id = act_id :page_edit_activity(id)) # Lambda remebers the variable not the value
+                    ui.button(icon = "delete", on_click = lambda id = act_id: page_delete_activity(id))
+                with ui.row():
+                    hours = activity.duration // 60
+                    minutes =((activity.duration / 60) - hours) * 60
+                    ui.label(f'Activity Duration: {hours}:{minutes:.0f}')
+                with ui.row():
+                    ui.label(f'Perceived Effort: {activity.rpe}')
+        pass
+
+def page_edit_activity(act_id):
+    context.main_page.clear()
+    activity = context.current_user.activities[act_id]
+    with context.main_page:
+        with ui.card():
+                with ui.row():
+                    ui.label('Editing Activity:')
+                    ui.button(icon = 'save', on_click = lambda : [on_submit('edit activity',type.value ,hours.value, minutes.value, rpe.value, timestamp, act_id)])
+                with ui.row():
+                    type = ui.select(['Run', 'Bike','Strength'] ,value = f'{activity.type}')
+                    with ui.input('Date', value = activity.timestamp) as date:
+                        with ui.menu().props('no-parent-event') as menu:
+                            with ui.date().bind_value(date):
+                                with ui.row().classes('justify-end'):
+                                    ui.button('Close', on_click=menu.close).props('flat')
+                        with date.add_slot('append'):
+                            ui.icon('edit_calendar').on('click', menu.open).classes('cursor-pointer')
+                    timestamp = date.value
+                with ui.row():
+                    ui.label('Activity Duration:')
+                with ui.row():
+                    hours = ui.number(label ='Hours', value = activity.duration // 60, min = 0)
+                    minutes = ui.number(label = 'Minutes', value = ((activity.duration / 60) - hours.value) * 60, min = 0, step = 10, precision = 0)
+                with ui.row().style('width: 100%'):
+                    rpe = ui.slider(min = 1, max = 10, value = activity.rpe)
+                    ui.label().bind_text_from(rpe, 'value')
+            
+def page_delete_activity(act_id):
+        with ui.dialog().props('backdrop-filter="blur(8px) brightness(40%)"') as dialog:
+            ui.label('Deleting...Are you sure? (Y/N)').classes('text-3xl text-white')
+        pass
+
 def dashboard():
     if context.user_logged_in:
         nav_history.push(dashboard)
