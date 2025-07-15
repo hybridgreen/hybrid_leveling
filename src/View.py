@@ -46,7 +46,6 @@ def dispatch(caller):
     ui.notify(caller)
     match caller:
         case 'back':
-            
             previous_page = nav_history.pop()
             previous_page()
         case _:
@@ -157,7 +156,12 @@ def page_edit_activity(act_id):
             
 def page_delete_activity(act_id):
         with ui.dialog().props('backdrop-filter="blur(8px) brightness(40%)"') as dialog:
-            ui.label('Deleting...Are you sure? (Y/N)').classes('text-3xl text-white')
+            with ui.row():
+                ui.label('Deleting...Are you sure?').classes('text-3xl text-white')
+            with ui.row():
+                ui.button('Yes', on_click = lambda : [delete_activity(act_id), ui.notify('Activity deleted!'), save() ,page_activities()])
+                ui.button('Cancel', on_click = dialog.close)
+        dialog.open()
         pass
 
 def dashboard():

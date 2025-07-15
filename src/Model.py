@@ -62,6 +62,7 @@ def edit_activity(type: str, duration: int, rpe: int, timestamp: date, id):
     context.current_user.activities[id] = activity
 
 def delete_activity(id):
+    del context.current_user.activities[id]
     pass
 
 
