@@ -9,10 +9,9 @@ from Model import *
 import datetime
 
 # -------------------#
-#  Event Handler     #
+#  Event Handlers     #
 # -------------------#
 def on_submit (caller, *args):
-    ui.notify(caller)
     match caller:
         case 'create user':
             context.current_user = create_user(args[0], args[1]) #ID and Username
@@ -24,13 +23,17 @@ def on_submit (caller, *args):
                 create_activity(args[0],duration, args[3], args[4])
             else:
                 ui.notify('Invalid duration')
-            
             ui.notify('Activity created!')
             save()
             pass
         case 'fetch user':
-            context.current_user = context.users[args[0]]
-            ui.notify(f"Welcome {context.current_user.name}")
+                id = args[0]
+                if id in context.users:
+                    context.current_user = context.users[id]
+                    ui.notify(f"Welcome {context.current_user.name}")
+                else:
+                    ui.notify("User id not recognised")
+
         case 'edit activity':
             if args[1] is not None and args[2] is not None:
                 duration = args[1] * 60 +  args[2]
@@ -40,16 +43,22 @@ def on_submit (caller, *args):
             save()
         case _:
             pass
-    dashboard()
+    if context.current_user is not None:
+        dashboard()
+    else:
+        page_login()
 
 def dispatch(caller):
     ui.notify(caller)
-    match caller:
-        case 'back':
-            previous_page = nav_history.pop()
-            previous_page()
-        case _:
-            pass
+    with context.main_page:
+        match caller:
+            case 'back':
+                if nav_history.double_peek() is not None:    
+                    nav_history.pop()
+                    previous_page = nav_history.pop()
+                    previous_page()
+            case _:
+                pass
 
 
 # -------------------#
@@ -58,25 +67,27 @@ def dispatch(caller):
 
 def page_login():
     nav_history.push(page_login)
-    ui.label("Are you a new user?")
-    ui.button('YES', on_click = page_new_user)
-    ui.button('NO', on_click = page_fetch_user)
+    context.main_page.clear()
+    with context.main_page:
+        ui.label("Are you a new user?")
+        ui.button('YES', on_click = page_new_user)
+        ui.button('NO', on_click = page_fetch_user)
 
 def page_new_user():
     nav_history.push(page_new_user)
     context.main_page.clear()
-    with ui.card():
-        id = "U"+generate("123456789", size=3)
-        ui.label(f"Welcome, your id is {id}, please save it")
-        username = ui.input(label="Enter user name", validation = {'Username max length = 10 ': lambda value: len(value)< 10})
-        ui.button('Submit', on_click = lambda : on_submit('create user',id,username.value))
-    context.user_logged_in = True
+    with context.main_page:
+        with ui.card():
+            id = "U"+generate("123456789", size=3)
+            ui.label(f"Welcome, your id is {id}, please save it")
+            username = ui.input(label="Enter user name", validation = {'Username max length = 10 ': lambda value: len(value)< 10})
+            ui.button('Submit', on_click = lambda : on_submit('create user',id,username.value))
 
 def page_fetch_user():
     nav_history.push(page_fetch_user)
     context.main_page.clear()
     with ui.card():
-        id = ui.input(label = " Enter user ID", validation = {'User ID max length = 4': lambda value: value.startswith('U') and len(value)<5})
+        id = ui.input(label = " Enter user ID", validation = {'User ID must start with U': lambda value: value.startswith('U'),'User ID cannot be empty, max length is 4': lambda value: len(value)<5 and len(value)>0})
         ui.button('Submit', on_click = lambda : on_submit('fetch user',id.value))
     context.user_logged_in = True
 
@@ -108,23 +119,28 @@ def page_add_workout():
             ui.button('Submit', on_click = lambda : [on_submit('add activity',type.value ,hours.value, minutes.value, rpe.value,  timestamp)])
     
 def page_activities():
-    nav_history.push(page_activities)
-    context.main_page.clear()
-    with context.main_page :
-        for act_id in context.current_user.activities:
-            activity = context.current_user.activities[act_id]
-            with ui.card():
-                with ui.row():
-                    ui.label(f'Activity Type: {activity.type}')
-                    ui.label(f'Date: {activity.timestamp}')
-                    ui.button(icon = "edit", on_click = lambda id = act_id :page_edit_activity(id)) # Lambda remebers the variable not the value
-                    ui.button(icon = "delete", on_click = lambda id = act_id: page_delete_activity(id))
-                with ui.row():
-                    hours = activity.duration // 60
-                    minutes =((activity.duration / 60) - hours) * 60
-                    ui.label(f'Activity Duration: {hours}:{minutes:.0f}')
-                with ui.row():
-                    ui.label(f'Perceived Effort: {activity.rpe}')
+
+    if context.current_user is None:
+            ui.notify('Please login to view this page')
+            page_login()
+    else:
+        nav_history.push(page_activities)
+        context.main_page.clear()
+        with context.main_page :
+            for act_id in context.current_user.activities:
+                activity = context.current_user.activities[act_id]
+                with ui.card():
+                    with ui.row():
+                        ui.label(f'Activity Type: {activity.type}')
+                        ui.label(f'Date: {activity.timestamp}')
+                        ui.button(icon = "edit", on_click = lambda id = act_id :page_edit_activity(id)) # Lambda remebers the variable not the value
+                        ui.button(icon = "delete", on_click = lambda id = act_id: page_delete_activity(id))
+                    with ui.row():
+                        hours = activity.duration // 60
+                        minutes =((activity.duration / 60) - hours) * 60
+                        ui.label(f'Activity Duration: {hours}:{minutes:.0f}')
+                    with ui.row():
+                        ui.label(f'Perceived Effort: {activity.rpe}')
         pass
 
 def page_edit_activity(act_id):
@@ -165,11 +181,12 @@ def page_delete_activity(act_id):
         pass
 
 def dashboard():
-    if context.user_logged_in:
-        nav_history.push(dashboard)
-        context.main_page.clear()
-        with context.main_page:
-            ui.button('Add Workout', on_click = lambda: page_add_workout())
-            ui.button('View Activities', on_click = lambda: page_activities())
-    else:
-        page_login()
+        if context.current_user is None:
+            ui.notify('Please login to view this page')
+            page_login()
+        else:
+            nav_history.push(dashboard)
+            context.main_page.clear()
+            with context.main_page:
+                ui.button('Add Workout', on_click = lambda: page_add_workout())
+                ui.button('View Activities', on_click = lambda: page_activities())

@@ -6,6 +6,7 @@ class AppContext:
         self.user_logged_in = False
         pass
 
+
 class Stack:
   def __init__(self):
     self.stack = []
@@ -22,6 +23,11 @@ class Stack:
     if self.isEmpty():
       return None
     return self.stack[-1]
+  
+  def double_peek(self):
+    if len(self.stack) < 2:
+      return None
+    return self.stack[-2]
 
   def isEmpty(self):
     return len(self.stack) == 0

@@ -26,8 +26,7 @@ def main():
 
     context.main_page = ui.column().props('full-width')
 
-    with context.main_page:
-        page_login()
+    page_login()
     ui.run()
 
 if __name__ in {"__main__", "__mp_main__"}:
