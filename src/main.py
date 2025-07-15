@@ -13,7 +13,6 @@ def main():
 
     print("User data loaded succesfully")
 
-
     result = ui.label().classes('mr-auto')
     with ui.row():
         with ui.button(icon='menu'):

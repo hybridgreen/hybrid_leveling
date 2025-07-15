@@ -3,6 +3,7 @@ class AppContext:
         self.main_page = None
         self.current_user = None
         self.users = dict()
+        self.user_logged_in = False
         pass
 
 class Stack:

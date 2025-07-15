@@ -75,7 +75,6 @@ def save():
             user_json = user.model_dump_json()
             file.write(user_json)
         pass
-    print("Saved!")
 
 def load():
     print("Loading user data")

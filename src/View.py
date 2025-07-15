@@ -54,6 +54,7 @@ def page_new_user():
         ui.label(f"Welcome, your id is {id}, please save it")
         username = ui.input(label="Enter user name", validation = {'Username max length = 10 ': lambda value: len(value)< 10})
         ui.button('Submit', on_click = lambda : on_submit('create user',id,username.value))
+    context.user_logged_in = True
 
 def page_fetch_user():
     nav_history.push(page_fetch_user)
@@ -61,6 +62,7 @@ def page_fetch_user():
     with ui.card():
         id = ui.input(label = " Enter user ID", validation = {'User ID max length = 4': lambda value: value.startswith('U') and len(value)<5})
         ui.button('Submit', on_click = lambda : on_submit('fetch user',id.value))
+    context.user_logged_in = True
 
 
 def page_add_workout():
@@ -94,21 +96,26 @@ def page_add_workout():
 
 def page_activities():
     nav_history.push(page_activities)
-    for activity in context.current_user.activities:
+    print("Displaying activities")
+    print(context.current_user.activities)
+    for act_id in context.current_user.activities:
+        activity = context.current_user.activities[act_id]
         with ui.card() as activity_card:
             with ui.row():
                 ui.label(f'Activity Type:{activity.type}')
                 ui.label(f'Date:{activity.timestamp}')
-        with ui.row():
-            ui.label(f'Activity Duration: {activity.duration}')
-        with ui.row():
-            ui.label(f'Perceived Effort: {activity.rpe}')
+            with ui.row():
+                ui.label(f'Activity Duration: {activity.duration}')
+            with ui.row():
+                ui.label(f'Perceived Effort: {activity.rpe}')
     pass
-
+ 
 def dashboard():
-    nav_history.push(dashboard)
-    context.main_page.clear()
-    with context.main_page:
-        ui.button('Add Workout', on_click = lambda: page_add_workout())
-        ui.button('View Activities', on_click = lambda: page_activities())
-    pass
+    if context.user_logged_in:
+        nav_history.push(dashboard)
+        context.main_page.clear()
+        with context.main_page:
+            ui.button('Add Workout', on_click = lambda: page_add_workout())
+            ui.button('View Activities', on_click = lambda: page_activities())
+    else:
+        page_login()
