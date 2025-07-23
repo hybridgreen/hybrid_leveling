@@ -1,3 +1,4 @@
+from enum import Enum,IntEnum
 class AppContext:
     def __init__(self):
         self.main_page = None
@@ -34,7 +35,7 @@ class Stack:
 
   def size(self):
     return len(self.stack)
-  
+
 
 nav_history = Stack()
 context = AppContext()

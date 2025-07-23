@@ -41,8 +41,32 @@ def on_submit (caller, *args):
             else:
                 ui.notify('Invalid duration')
             save()
+        case "Generate Split":
+            block = []
+            spread = (0.8, 0, 0.2)
+            current_time = args[0]
+            budget = args[1]
+            number_of_runs = args[2]
+            hard_day = args[3]
+            long_day = args[4]
+            week_1 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.3, max_budget= budget)
+            current_time *= 1.05
+            week_2 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.4, max_budget= budget)
+            current_time *= 1.05
+            week_3 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.5, max_budget= budget)
+            current_time *= 1.05
+            week_4 = generate_week(current_time*0.8,number_of_runs,spread, long_ratio= 0.3, max_budget= budget)
+
+            block.append(week_1)
+            block.append(week_2)
+            block.append(week_3)
+            block.append(week_4)
+
+            page_display_split(block)
+
         case _:
             pass
+
     if context.current_user is not None:
         dashboard()
     else:
@@ -59,6 +83,15 @@ def dispatch(caller):
                     previous_page()
             case _:
                 pass
+
+def validate_gap(day1, day2):
+    if day1 and day2:
+        gap = abs(day2 - day1)
+        if gap < 2:
+            ui.notify('Please ensure at least 2 days between hard and long runs.')
+            return False
+        else:
+            return True
 
 
 # -------------------#
@@ -179,6 +212,57 @@ def page_delete_activity(act_id):
                 ui.button('Cancel', on_click = dialog.close)
         dialog.open()
         pass
+
+def page_userpref(): #incomplete
+    context.main_page.clear()
+    if context.current_user is None:
+        ui.notify("Login first!")
+        page_login()
+    else:
+        nav_history.push(page_userpref)
+        with context.main_page:
+            with ui.card():
+                ui.label(f"Welcome {context.current_user.name}, your user ID is {context.current_user.id}")
+                username = ui.input(label= 'Change username')
+                ui.label("Training Parameters")
+
+    pass
+
+def page_training_split():
+    context.main_page.clear()
+    #if context.current_user is None:
+    #    ui.notify("Login first!")
+    #    page_login()
+    #else:
+    nav_history.push(page_training_split)
+
+    weekdays = {
+    1: 'MONDAY',
+    2: 'TUESDAY',
+    3: 'WEDNESDAY',
+    4: 'THURSDAY',
+    5: 'FRIDAY',
+    6: 'SATURDAY',
+    7: 'SUNDAY',
+    }
+
+    with context.main_page:
+        with ui.card():
+            ui.label("How many hours do you currently run?")
+            current_time = ui.slider(min = 1, max = 12, value = 3).props('label')
+            ui.label("How much time do you have to run?")
+            budget = ui.slider(min = 1, max = 12, value = 3).props('label')
+            ui.label("How many times per week can you run?")
+            number_of_runs = ui.slider(min = 3, max = 7, value = 4).props('label')
+            with ui.row():
+                ui.label('Select Hard workout day:')
+                hard_day = ui.select(weekdays, label = "Hard day", on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)))
+            with ui.row():
+                ui.label('Select Long run day:')    
+                long_day = ui.select( weekdays, label = "Long day", on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)) )
+            generate_button = ui.button('Generate Split', on_click = lambda: on_submit("Generate Split", current_time.value, budget.value, number_of_runs.value, hard_day.value, long_day.value))
+            generate_button.disable()
+
 
 def dashboard():
         if context.current_user is None:

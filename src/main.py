@@ -12,14 +12,14 @@ def main():
         print(f"Error occured: {e}")
 
     print("User data loaded succesfully")
-
     result = ui.label().classes('mr-auto')
     with ui.row():
         with ui.button(icon='menu'):
             with ui.menu() as menu:
                 ui.menu_item('Dashboard', lambda: dashboard())
-                ui.menu_item('User preferences')
+                ui.menu_item('User preferences', lambda: page_userpref())
                 ui.menu_item('Activities', lambda: page_activities())
+                ui.menu_item('Training Split Generator', lambda: page_training_split())
                 ui.separator()
                 ui.menu_item('Close', menu.close)
         ui.button(icon = 'arrow_back', on_click = lambda: dispatch('back'))

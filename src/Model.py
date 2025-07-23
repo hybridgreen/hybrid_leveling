@@ -82,6 +82,7 @@ def save():
         pass
 
 def load():
+
     print("Loading user data")
     log_dir = os.path.abspath(os.getcwd())+"/log"
     save_files = os.listdir(log_dir)
@@ -91,3 +92,52 @@ def load():
         with open(path, 'r') as json_file:
             user_json = json_file.read()
             context.users[file]=User.model_validate_json(user_json)
+
+# -------------------#
+#   Plan Generator  #
+# -------------------#
+
+def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1, no_mod=0, no_hard=1, long_ratio=0.3):
+
+    workout_list = []
+    number_easy = activity_count - no_long - no_mod - no_hard
+    max_easy_duration = 60
+    min_easy_duration = 30
+    max_long_run = 180
+
+    total_easy_h = spread[0] * current_time
+    total_mod_h = spread[1] * current_time
+    total_hard_h = spread[2] * current_time
+
+    long_minutes = total_easy_h * long_ratio * 60
+    long_minutes = max(60, min(long_minutes,max_long_run))
+
+    if no_long > 0:
+        workout_list.append(('Long', round(long_minutes), 0))
+
+    remaining_easy_hours = total_easy_h - int(long_minutes/60)
+
+    for i in range(number_easy):
+        easy_minutes = int((remaining_easy_hours / number_easy)*60)
+        easy_minutes = max(min_easy_duration, min(easy_minutes,max_easy_duration))
+        workout_list.append(('Easy', easy_minutes))
+
+    if no_mod > 0:
+        for i in range(no_mod):
+            workout_list.append(('Steady', int(total_mod_h / no_mod * 60)))
+
+    if no_hard > 0:
+        for i in range(no_hard):
+            workout_list.append(('Hard', int(total_hard_h / no_hard * 60)))
+
+    total_training_time = 0
+
+    for i in range(len(workout_list)):
+        total_training_time += workout_list[i][1]
+    
+    if total_training_time > max_budget*60:
+        return generate_week(max_budget, activity_count, spread, max_budget= max_budget)
+    else:
+        return workout_list
+
+
