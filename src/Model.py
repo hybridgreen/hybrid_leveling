@@ -97,10 +97,11 @@ def load():
 #   Plan Generator  #
 # -------------------#
 
-def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1, no_mod=0, no_hard=1, long_ratio=0.3):
+def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1, no_mod=0, no_hard=1, long_ratio=0.3, hard_day = 2, long_day = 6):
 
     workout_list = []
     number_easy = activity_count - no_long - no_mod - no_hard
+    number_rest =  7 - number_easy
     max_easy_duration = 60
     min_easy_duration = 30
     max_long_run = 180
@@ -111,9 +112,6 @@ def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1
 
     long_minutes = total_easy_h * long_ratio * 60
     long_minutes = max(60, min(long_minutes,max_long_run))
-
-    if no_long > 0:
-        workout_list.append(('Long', round(long_minutes), 0))
 
     remaining_easy_hours = total_easy_h - int(long_minutes/60)
 
@@ -129,8 +127,24 @@ def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1
     if no_hard > 0:
         for i in range(no_hard):
             workout_list.append(('Hard', int(total_hard_h / no_hard * 60)))
+    
+    if no_long > 0:
+        workout_list.append(('Long', int(long_minutes)))
 
+    for i in range(number_rest):
+        workout_list.append(('Rest', 0))
+
+    for index, workout in enumerate(workout_list):
+        if 'Hard' == workout[0]:
+            temp = workout_list[hard_day]
+            workout_list[hard_day] = workout
+            workout_list[index] = temp
+        if 'Long' == workout[0]:
+            temp = workout_list[long_day]
+            workout_list[long_day] = workout
+            workout_list[index] = temp
     total_training_time = 0
+
 
     for i in range(len(workout_list)):
         total_training_time += workout_list[i][1]
@@ -139,5 +153,27 @@ def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1
         return generate_week(max_budget, activity_count, spread, max_budget= max_budget)
     else:
         return workout_list
+    
 
+def generate_split(current_time, budget, number_of_runs, hard_day = 2, long_day = 6):  
+    
+    spread = (0.8, 0, 0.2) # Easy, Steady, Hard
+    block = []
+
+    week1 = generate_week(current_time, number_of_runs, spread, max_budget=budget, long_ratio= 0.3,hard_day = hard_day, long_day = long_day)
+    block.append(week1)
+    current_time *= 1.1
+
+    week2 = generate_week(current_time, number_of_runs, spread, max_budget=budget, long_ratio= 0.4,hard_day = hard_day, long_day = long_day)
+    block.append(week2)
+    current_time *= 1.1
+
+    week3 = generate_week(current_time, number_of_runs, spread, max_budget=budget, long_ratio= 0.5,hard_day = hard_day, long_day = long_day)
+    block.append(week3)
+    current_time *= 0.8
+
+    week4 = generate_week(current_time, number_of_runs, spread, max_budget=budget, long_ratio= 0.3,hard_day = hard_day, long_day = long_day)
+    block.append(week4)
+
+    return block
 

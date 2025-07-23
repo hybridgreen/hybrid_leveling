@@ -41,28 +41,6 @@ def on_submit (caller, *args):
             else:
                 ui.notify('Invalid duration')
             save()
-        case "Generate Split":
-            block = []
-            spread = (0.8, 0, 0.2)
-            current_time = args[0]
-            budget = args[1]
-            number_of_runs = args[2]
-            hard_day = args[3]
-            long_day = args[4]
-            week_1 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.3, max_budget= budget)
-            current_time *= 1.05
-            week_2 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.4, max_budget= budget)
-            current_time *= 1.05
-            week_3 = generate_week(current_time,number_of_runs,spread, long_ratio= 0.5, max_budget= budget)
-            current_time *= 1.05
-            week_4 = generate_week(current_time*0.8,number_of_runs,spread, long_ratio= 0.3, max_budget= budget)
-
-            block.append(week_1)
-            block.append(week_2)
-            block.append(week_3)
-            block.append(week_4)
-
-            page_display_split(block)
 
         case _:
             pass
@@ -84,6 +62,10 @@ def dispatch(caller):
             case _:
                 pass
 
+# -------------------#
+#  Helpers           #
+# -------------------#
+
 def validate_gap(day1, day2):
     if day1 and day2:
         gap = abs(day2 - day1)
@@ -92,6 +74,13 @@ def validate_gap(day1, day2):
             return False
         else:
             return True
+
+def format_week_for_table(workout_list):
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    return {
+        day: f"{workout[0]} ({int(workout[1])})"
+        for day, workout in zip(days_of_week, workout_list)
+    }
 
 
 # -------------------#
@@ -237,13 +226,13 @@ def page_training_split():
     nav_history.push(page_training_split)
 
     weekdays = {
-    1: 'MONDAY',
-    2: 'TUESDAY',
-    3: 'WEDNESDAY',
-    4: 'THURSDAY',
-    5: 'FRIDAY',
-    6: 'SATURDAY',
-    7: 'SUNDAY',
+    0: 'MONDAY',
+    1: 'TUESDAY',
+    2: 'WEDNESDAY',
+    3: 'THURSDAY',
+    4: 'FRIDAY',
+    5: 'SATURDAY',
+    6: 'SUNDAY',
     }
 
     with context.main_page:
@@ -256,13 +245,22 @@ def page_training_split():
             number_of_runs = ui.slider(min = 3, max = 7, value = 4).props('label')
             with ui.row():
                 ui.label('Select Hard workout day:')
-                hard_day = ui.select(weekdays, label = "Hard day", on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)))
+                hard_day = ui.select(weekdays, label = "Hard day", value = 2, on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)))
             with ui.row():
                 ui.label('Select Long run day:')    
-                long_day = ui.select( weekdays, label = "Long day", on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)) )
-            generate_button = ui.button('Generate Split', on_click = lambda: on_submit("Generate Split", current_time.value, budget.value, number_of_runs.value, hard_day.value, long_day.value))
-            generate_button.disable()
+                long_day = ui.select( weekdays, label = "Long day", value = 6 , on_change = lambda : generate_button.set_enabled(validate_gap(hard_day.value, long_day.value)) )
+            generate_button = ui.button('Generate Split', on_click = lambda: [ page_training_split(), page_display_split(generate_split(current_time.value, budget.value, number_of_runs.value, hard_day = hard_day.value, long_day = long_day.value))])
+            generate_button.enable()
 
+def page_display_split(block):
+       
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    columns = [{'name': day, 'label' : day, 'field': day} for day in days_of_week]
+    
+    rows = [format_week_for_table(week) for week in block]
+
+    with context.main_page:
+        splits = ui.table(columns = columns, rows = rows )
 
 def dashboard():
         if context.current_user is None:
