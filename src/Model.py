@@ -143,6 +143,7 @@ def generate_week(current_time, activity_count, spread,max_budget = 6, no_long=1
             temp = workout_list[long_day]
             workout_list[long_day] = workout
             workout_list[index] = temp
+            
     total_training_time = 0
 
 
