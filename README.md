@@ -8,7 +8,6 @@ This was my first personal project for [Boot.dev](https://www.boot.dev/). All th
 
 ## Cloning
 
-## Usage
 I suggest running this app in a virtual environment to prevent interfering with your default Python environment. [Learn more about Venv](https://docs.python.org/3/tutorial/venv.html)
 
 Once you've set up your environment run this command in your terminal:
@@ -17,6 +16,7 @@ Make sure your working directory is the project directory and your virtual envir
 ```
 pip install -r /traktiv/requirements.txt.
 ```
+## Usage
 
 With all your dependency installed, you can run the app with 
 
