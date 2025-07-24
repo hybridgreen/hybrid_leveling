@@ -14,15 +14,15 @@ I suggest running this app in a virtual environment to prevent interfering with 
 Once you've set up your environment run this command in your terminal:
 Make sure your working directory is the project directory and your virtual environment is active.
 
-'''
+```
 pip install -r /traktiv/requirements.txt.
-'''
+```
 
 With all your dependency installed, you can run the app with 
 
-'''
+```
 python3 src/main.py
-'''
+```
 
 This starts the UI in your local server.
 
